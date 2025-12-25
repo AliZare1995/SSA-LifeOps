@@ -1,1 +1,494 @@
-
+{
+  "name": "Ecosystem #1 – LifeOps Capture & Review (v1) (OLD)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "690235af-8b66-4ff8-a50c-7a944cd1c236",
+      "name": "Config – Constants",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram/lifeops_inbound_placeholder",
+        "options": {}
+      },
+      "id": "df6aeff0-d861-468a-b4c4-e0aaf413ae3c",
+      "name": "TG – Inbound Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        128
+      ],
+      "webhookId": "0864869f-7e52-46c9-b866-c0dcc3c95395"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email/lifeops_inbound_placeholder",
+        "options": {}
+      },
+      "id": "8851f7e3-c24b-446d-a084-0b4cf5ee49c2",
+      "name": "Email – Inbound Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        384
+      ],
+      "webhookId": "42ecda5e-dcfd-4d0a-b746-c98841b3dac9"
+    },
+    {
+      "parameters": {},
+      "id": "a6bc7f2d-264c-403a-b1c1-7c54aa18023e",
+      "name": "Normalize – Build Internal Item",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "02fc8dbb-735c-4a71-9f71-5107b3f41e42",
+      "name": "Classify – Rules",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        208,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"needs_ai_classification\"]}}",
+              "operation": "isTrue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e6622343-9575-49c9-a277-fd78e07fb6bd",
+      "name": "Classify – Filter for AI",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        464,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.AI_CLASSIFIER_API_URL}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "fcbc4296-7542-4802-9f3f-aad9821d8409",
+      "name": "Classify – AI Fallback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        704,
+        128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c8f44e9d-b8d6-4fe7-bbba-f16a60073ab7",
+      "name": "Classify – Merge AI Result",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        960,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.SECOND_BRAIN_API_BASE_URL + \"/items\"}}",
+        "jsonParameters": true,
+        "options": {},
+        "queryParametersJson": "={\"source\": $json[\"source\"],\"external_id\": $json[\"external_id\"]}"
+      },
+      "id": "81477b9b-d873-42bc-bfe5-21c0b9639147",
+      "name": "DB – Check Existing Item",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        224
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6144bafc-93cd-43d6-8855-b27f61daa03c",
+      "name": "DB – Decide Create or Update",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.SECOND_BRAIN_API_BASE_URL + \"/items\"}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "37013944-ebc7-47fb-a906-1a81a21f11ff",
+      "name": "DB – Upsert Item",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.SECOND_BRAIN_API_BASE_URL + \"/items/\" + $json[\"existing_id\"]}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "1664c1bd-9b2c-4f34-a3f6-d18b1b4ab29e",
+      "name": "DB – Update Existing Item",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.LOGGING_ENDPOINT_URL}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "91f9b9f2-9b04-407f-8672-52bbed100108",
+      "name": "Log – Item Captured",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 8
+            }
+          ]
+        }
+      },
+      "id": "978c2162-ef3e-4471-ab93-ffea954b037a",
+      "name": "Digest – Daily Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.SECOND_BRAIN_API_BASE_URL + \"/items\"}}",
+        "jsonParameters": true,
+        "options": {},
+        "queryParametersJson": "={\"since_hours\": 24}"
+      },
+      "id": "f7eb30d6-935a-49c7-9fa5-acad41a7ba93",
+      "name": "Digest – Fetch Items (24h)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        736
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4de2e08f-c0a5-4dc8-9abd-2b9e00c8d32d",
+      "name": "Digest – Build Summary Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        112,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.AI_SUMMARIZER_API_URL}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "f037f4f9-d4e3-43d9-9998-8da1b184d637",
+      "name": "Digest – AI Summarize Daily",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        352,
+        784
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7db3683c-fe82-409d-8c48-6f4c922dc0f5",
+      "name": "Digest – Build Telegram Text",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        352,
+        624
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1efa6a09-165f-4c52-acc6-1be00a477a8e",
+      "name": "Digest – Merge AI Text",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        608,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot{{$items(\"Config – Constants\", 0, 0)[0].json.config.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "69f88a9c-bfce-4d6c-b863-3266616bc4be",
+      "name": "Digest – Send to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        864,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 9
+            }
+          ]
+        }
+      },
+      "id": "b8b23eaa-8a3e-4096-9117-1968c9e3bee8",
+      "name": "Weekly – Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.SECOND_BRAIN_API_BASE_URL + \"/items\"}}",
+        "jsonParameters": true,
+        "options": {},
+        "queryParametersJson": "={\"since_hours\": 168}"
+      },
+      "id": "4a3fa553-4f59-4712-adf5-7a7bc171748e",
+      "name": "Weekly – Fetch Items (7d)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        1024
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "68df2297-604e-4638-8812-610a4b7e0c36",
+      "name": "Weekly – Build Summary Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        112,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$items(\"Config – Constants\", 0, 0)[0].json.config.AI_SUMMARIZER_API_URL}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "4476c42c-dc7b-48cf-9bf3-4c5a0a5cc3f3",
+      "name": "Weekly – AI Summarize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1072
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c6744420-bc69-40a9-b3eb-9f8b9b6ec349",
+      "name": "Weekly – Build Telegram Text",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1232
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4b3f04d7-aaf2-4741-ae7a-cc8ab2aff2aa",
+      "name": "Weekly – Merge AI Text",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        608,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot{{$items(\"Config – Constants\", 0, 0)[0].json.config.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "3677dc04-65b6-41e0-9d01-605592ae4ddb",
+      "name": "Weekly – Send to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        864,
+        1232
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7e6e9872-0e15-48d4-9993-163566261627",
+      "name": "Error – Build Error Payload",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [
+        656,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$json.config.LOGGING_ENDPOINT_URL}}",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "5e10dc1e-be6e-44a7-9a40-640495fcef73",
+      "name": "Error – Log to Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        912,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/bot{{$json.config.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "4ed896db-bf42-43a6-ad01-4c9e8ada4c37",
+      "name": "Error – Notify Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        528
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Classify – Filter for AI": {
+      "main": [
+        [
+          {
+            "node": "Classify – AI Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB – Upsert Item": {
+      "main": [
+        [
+          {
+            "node": "Log – Item Captured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB – Update Existing Item": {
+      "main": [
+        [
+          {
+            "node": "Log – Item Captured",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Digest – Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Digest – Fetch Items (24h)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly – Trigger": {
+      "main": [
+        [
+          {
+            "node": "Weekly – Fetch Items (7d)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2d684a3e-c8f9-4fd0-a889-7af26ec54c8d",
+  "meta": {
+    "instanceId": "5c0af3b07cd62bb23bd07be5f437453fd5fbdae71657cb3a3cf9a6a15f873b62"
+  },
+  "id": "9PhuYxZx58Hgur9n",
+  "tags": []
+}
